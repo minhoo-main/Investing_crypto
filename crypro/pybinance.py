@@ -2,16 +2,15 @@ import time
 import requests
 import hmac
 from hashlib import sha256
-import CONFIG
 from datetime import datetime
 import pandas as pd
 import json
 
 class Binance:
-    def __init__(self, api_key, secret_key):
+    def __init__(self, api_key, secret_key, url):
         self._api_key = api_key
         self._secret_key = secret_key
-        self._api_url = CONFIG.BINANCE['MAIN_URL']
+        self._api_url = url
         
     def get_sign(self, payload):
         signature = hmac.new(self._secret_key.encode("utf-8"), payload.encode("utf-8"), digestmod=sha256).hexdigest()
@@ -81,10 +80,3 @@ class Binance:
         df[['open', 'high', 'low', 'close', 'volume']] = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
         
         return df
-    
-api_key = 'your_api_key'
-secret_key = 'your_secret_key'
-binance = Binance(secret_key)
-
-historical_spot_price = binance.get_historical_spot_price('ONTUSDT', '1h', start_time='1 Jan 2022')
-print(historical_spot_price)

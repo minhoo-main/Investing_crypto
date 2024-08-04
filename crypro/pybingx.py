@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-
-#%%
 import time
 import requests
 import hmac
 from hashlib import sha256
-import CONFIG
+from . import CONFIG
+import pandas as pd
 
 class BingX:
-    def __init__(self, api_key, secret_key):
+    def __init__(self, api_key, secret_key, url):
         self._api_key = api_key
         self._secret_key = secret_key
-        self._api_url = CONFIG.BINGX['MAIN_URL']
+        self._api_url = url
         
     def get_sign(self,payload):
         signature = hmac.new(self._secret_key.encode("utf-8"), payload.encode("utf-8"), digestmod=sha256).hexdigest()
@@ -96,7 +95,13 @@ class BingX:
         "symbol": symbol + "-USDT",
         "startTime": 0,
         "endTime": 0,
-        "limit": 0
+        "limit": 0 
         }
         paramsStr = self.praseParam(paramsMap)
-        return self.send_request(method, path, paramsStr, payload)
+        data = self.send_request(method, path, paramsStr, payload)
+        data_list = data['data']
+        df = pd.DataFrame(data_list)
+        df['fundingTime'] = pd.to_datetime(df['fundingTime'], unit='ms')
+        df['fundingRate'] = df['fundingRate'].astype(float)
+        df['markPrice'] = df['markPrice'].astype(float)
+        return df
