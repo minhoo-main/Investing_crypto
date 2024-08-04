@@ -7,6 +7,7 @@ import hmac
 from hashlib import sha256
 from . import CONFIG
 import pandas as pd
+from datetime import datetime
 
 class BingX:
     def __init__(self, api_key, secret_key, url):
@@ -87,21 +88,28 @@ class BingX:
         paramsStr = self.praseParam(paramsMap)
         return self.send_request(method, path, paramsStr, payload)
 
-    def get_funding_rate_history(self, symbol):
-        payload = {}
+    def get_funding_rate_history(self, symbol, start_time=None, end_time=None, limit=100):
         path = '/openApi/swap/v2/quote/fundingRate'
         method = "GET"
+        
+        start_time_ms = int(datetime.strptime(start_time, '%d %b %Y').timestamp() * 1000) if start_time else 0
+        end_time_ms = int(datetime.strptime(end_time, '%d %b %Y').timestamp() * 1000) if end_time else 0
+        
         paramsMap = {
-        "symbol": symbol + "-USDT",
-        "startTime": 0,
-        "endTime": 0,
-        "limit": 0 
+            "symbol": symbol + "-USDT",
+            "startTime": start_time_ms,
+            "endTime": end_time_ms,
+            "limit": limit
         }
         paramsStr = self.praseParam(paramsMap)
-        data = self.send_request(method, path, paramsStr, payload)
+        data = self.send_request(method, path, paramsStr, payload={})
+        
+        if len(data['data']) == 0:
+            return pd.DataFrame([])
         data_list = data['data']
         df = pd.DataFrame(data_list)
         df['fundingTime'] = pd.to_datetime(df['fundingTime'], unit='ms')
         df['fundingRate'] = df['fundingRate'].astype(float)
         df['markPrice'] = df['markPrice'].astype(float)
+        
         return df
