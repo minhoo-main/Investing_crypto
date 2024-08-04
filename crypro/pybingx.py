@@ -88,28 +88,42 @@ class BingX:
         paramsStr = self.praseParam(paramsMap)
         return self.send_request(method, path, paramsStr, payload)
 
-    def get_funding_rate_history(self, symbol, start_time=None, end_time=None, limit=100):
+    def get_funding_rate_history(self, symbol, start_time=None, end_time=None, limit=1000):
         path = '/openApi/swap/v2/quote/fundingRate'
         method = "GET"
         
+        # Convert start_time and end_time to milliseconds since epoch if provided
         start_time_ms = int(datetime.strptime(start_time, '%d %b %Y').timestamp() * 1000) if start_time else 0
-        end_time_ms = int(datetime.strptime(end_time, '%d %b %Y').timestamp() * 1000) if end_time else 0
+        end_time_ms = int(datetime.strptime(end_time, '%d %b %Y').timestamp() * 1000) if end_time else int(time.time() * 1000)
         
-        paramsMap = {
-            "symbol": symbol + "-USDT",
-            "startTime": start_time_ms,
-            "endTime": end_time_ms,
-            "limit": limit
-        }
-        paramsStr = self.praseParam(paramsMap)
-        data = self.send_request(method, path, paramsStr, payload={})
+        all_data = []
+        current_start_time_ms = start_time_ms
         
-        if len(data['data']) == 0:
-            return pd.DataFrame([])
-        data_list = data['data']
-        df = pd.DataFrame(data_list)
-        df['fundingTime'] = pd.to_datetime(df['fundingTime'], unit='ms')
-        df['fundingRate'] = df['fundingRate'].astype(float)
-        df['markPrice'] = df['markPrice'].astype(float)
+        while True:
+            paramsMap = {
+                "symbol": symbol + "-USDT",
+                "startTime": current_start_time_ms,
+                "endTime": end_time_ms,
+                "limit": limit
+            }
+            paramsStr = self.praseParam(paramsMap)
+            data = self.send_request(method, path, paramsStr, payload={})
+            
+            if not data['data']:
+                break
+
+            all_data.extend(data['data'])
+
+            end_time_ms = data['data'][0]['fundingTime'] -1
+
+            if len(data['data']) < limit:
+                break
         
-        return df
+        df = pd.DataFrame(all_data)
+        if not df.empty:
+            df['fundingTime'] = pd.to_datetime(df['fundingTime'], unit='ms')
+            df['fundingRate'] = df['fundingRate'].astype(float)
+            df['markPrice'] = df['markPrice'].astype(float)
+        
+        df_sorted = df.sort_values(by='fundingTime')
+        return df_sorted
