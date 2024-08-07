@@ -1,4 +1,4 @@
-from crypro import pybinance
+from crypto import pybinance
 from datetime import datetime
 import pandas as pd
 
