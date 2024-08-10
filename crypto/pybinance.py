@@ -7,20 +7,17 @@ import pandas as pd
 import json
 
 class Binance:
+    
     def __init__(self, api_key, secret_key, url):
         self._api_key = api_key
         self._secret_key = secret_key
         self._api_url = url
-        
+    
+    # 이 프로젝트에서는 잔고 및 포지션 등 계정 정보에 접근하지 않기 때문에 아래 signature는 불필요 함. 
     def get_sign(self, payload):
         signature = hmac.new(self._secret_key.encode("utf-8"), payload.encode("utf-8"), digestmod=sha256).hexdigest()
         return signature
-    
-    def parse_params(self, params_map):
-        sorted_keys = sorted(params_map)
-        params_str = "&".join(["%s=%s" % (x, params_map[x]) for x in sorted_keys])
-        return params_str
-    
+
     def send_request(self, method, path, params_str, payload):
         url = "%s%s?%s&signature=%s" % (self._api_url, path, params_str, self.get_sign(params_str))
         headers = {
@@ -28,6 +25,11 @@ class Binance:
         }
         response = requests.request(method, url, headers=headers, data=payload)
         return response.json()
+    
+    def parse_params(self, params_map):
+        sorted_keys = sorted(params_map)
+        params_str = "&".join(["%s=%s" % (x, params_map[x]) for x in sorted_keys])
+        return params_str
 
     def get_historical_spot_price(self, symbol, interval, start_time=None, end_time=None, limit=1000):
         path = '/api/v3/klines'
@@ -35,12 +37,12 @@ class Binance:
         all_data = []
         
         if start_time:
-            start_time_ms = int(datetime.strptime(start_time, '%d %b %Y').timestamp() * 1000)
+            start_time_ms = int(datetime.strptime(start_time, '%Y-%m-%d').timestamp() * 1000)
         else:
             start_time_ms = None
             
         if end_time:
-            end_time_ms = int(datetime.strptime(end_time, '%d %b %Y').timestamp() * 1000)
+            end_time_ms = int(datetime.strptime(end_time, '%Y-%m-%d').timestamp() * 1000)
         else:
             end_time_ms = None
         

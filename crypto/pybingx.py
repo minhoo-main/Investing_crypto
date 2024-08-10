@@ -92,9 +92,8 @@ class BingX:
         path = '/openApi/swap/v2/quote/fundingRate'
         method = "GET"
         
-        # Convert start_time and end_time to milliseconds since epoch if provided
-        start_time_ms = int(datetime.strptime(start_time, '%d %b %Y').timestamp() * 1000) if start_time else 0
-        end_time_ms = int(datetime.strptime(end_time, '%d %b %Y').timestamp() * 1000) if end_time else int(time.time() * 1000)
+        start_time_ms = int(datetime.strptime(start_time, '%Y-%m-%d').timestamp() * 1000) if start_time else 0
+        end_time_ms = int(datetime.strptime(end_time, '%Y-%m-%d').timestamp() * 1000) if end_time else int(time.time() * 1000)
         
         all_data = []
         current_start_time_ms = start_time_ms
