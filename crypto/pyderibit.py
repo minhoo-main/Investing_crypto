@@ -3,7 +3,6 @@ import datetime
 import pandas as pd
 
 class Deribit:
-    BASE_URL = "https://www.deribit.com/api/v2/public"
 
     def __init__(self, url):
         self.BASE_URL = url
@@ -91,3 +90,41 @@ class Deribit:
         params = {'currency': currency, 'kind': 'future'}
         response = requests.get(url, params=params)
         return response.json().get('result', [])
+
+    def generate_fridays(self, start_date_str, end_date_str=None):
+        if end_date_str == None:
+            now = datetime.datetime.now()
+            end_date_str = now.strftime('%Y-%m-%d')
+        start_date = datetime.datetime.strptime(start_date_str, '%Y-%m-%d')
+        
+        if start_date.weekday() != 4: 
+            days_to_friday = 4 - start_date.weekday() if start_date.weekday() < 4 else 7 - (start_date.weekday() - 4)
+            start_date += datetime.timedelta(days=days_to_friday)
+        
+        ls_mty = []
+        
+        while True:
+            formatted_date = start_date.strftime('%d%b%y').upper()
+            ls_mty.append(formatted_date)
+            
+            start_date += datetime.timedelta(weeks=1)
+            
+            end_date = datetime.datetime.strptime(end_date_str, '%Y-%m-%d')
+            if start_date > end_date:
+                break
+
+        return ls_mty
+    
+    def get_instruments_all_list(self, currency, str_from):
+        dict_fut = {}
+        ls_old_mty = self.generate_fridays(str_from)
+        for str_mty in ls_old_mty:
+            fut = self.get_instrument(currency+'-'+str_mty)
+            if len(fut) != 0 :
+                dict_fut[currency+'-'+str_mty] = fut
+        
+        ls_live_mty = self.get_instruments(currency)
+        for dict_mty in ls_live_mty:
+            dict_fut[dict_mty['instrument_name']] = dict_mty
+        
+        return dict_fut

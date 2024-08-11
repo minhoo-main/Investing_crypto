@@ -23,3 +23,7 @@ UPBIT = {
     'API_KEY': 'testapikeyupbit' ,
     'SECRET_KEY': 'testsecretkeyupbit'
     }
+
+DERIBIT = {
+    'MAIN_URL': 'https://www.deribit.com/api/v2/public' 
+    }
